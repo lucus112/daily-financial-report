@@ -1,0 +1,96 @@
+name: 财经秘书日报
+
+on:
+  schedule:
+    # 北京时间 08:00 (UTC 00:00) - 早盘简报
+    - cron: '0 0 * * 1-6'
+    # 北京时间 17:00 (UTC 09:00) - 晚盘复盘
+    - cron: '0 9 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      report_type:
+        description: '报告类型'
+        required: true
+        type: choice
+        options:
+          - morning
+          - evening
+          - both
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: 安装依赖
+        run: pip install yfinance --quiet
+
+      - name: 确定报告类型
+        id: report
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ inputs.report_type }}" >> $GITHUB_OUTPUT
+          else
+            # 根据 cron 触发时间决定类型
+            HOUR=$(date -u +%H)
+            if [ "$HOUR" = "00" ]; then
+              echo "type=morning" >> $GITHUB_OUTPUT
+            elif [ "$HOUR" = "09" ]; then
+              echo "type=evening" >> $GITHUB_OUTPUT
+            else
+              echo "type=both" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: 生成报告
+        run: |
+          TYPE="${{ steps.report.outputs.type }}"
+          if [ "$TYPE" = "both" ]; then
+            python scripts/generate_report.py morning
+            python scripts/generate_report.py evening
+          else
+            python scripts/generate_report.py $TYPE
+          fi
+
+      - name: 提交并推送
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
+          git commit -m "docs: auto-generate daily report [$(date +%Y-%m-%d)]"
+          git push
+
+  deploy:
+    needs: generate
+    runs-on: ubuntu-latest
+    if: success()
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 部署到 GitHub Pages
+        uses: actions/deploy-pages@v4
