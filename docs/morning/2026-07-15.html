@@ -29,6 +29,11 @@
   .commodity-item .chg { font-size: 12px; font-weight: 600; margin-top: 3px; }
   .up { color: #e74c3c; } .down { color: #27ae60; }
   .footer { text-align: center; color: #bbb; font-size: 11px; margin-top: 24px; padding-bottom: 20px; }
+  .news-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; line-height: 1.6; color: #444; }
+  .news-item:last-child { border-bottom: none; }
+  .news-time { font-size: 11px; color: #aaa; margin-right: 8px; font-family: monospace; }
+  .news-tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-right: 6px; background: #eef1f7; color: #666; }
+  .news-empty { text-align: center; color: #999; font-size: 13px; padding: 16px 0; }
   @media (max-width: 600px) { .cards, .cards-2 { grid-template-columns: 1fr; } .commodity-row { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
@@ -64,28 +69,72 @@
   <div class="section">
     <h2>亚太盘前前瞻</h2>
     <div class="cards-2">
-      <div class="card"><div class="label">上证指数</div><div class="value">3,972.44</div><div class="change up">+1.50%</div></div>
-      <div class="card"><div class="label">深证成指</div><div class="value">14,941.18</div><div class="change up">+2.88%</div></div>
-      <div class="card"><div class="label">创业板指</div><div class="value">3,858.19</div><div class="change up">+0.22%</div></div>
-      <div class="card"><div class="label">恒生指数</div><div class="value">24,616.15</div><div class="change up">+1.66%</div></div>
-      <div class="card"><div class="label">恒生科技</div><div class="value">4,711.58</div><div class="change up">+0.69%</div></div>
-      <div class="card"><div class="label">日经225</div><div class="value">68,183.85</div><div class="change up">+1.40%</div></div>
-      <div class="card"><div class="label">韩国KOSPI</div><div class="value">7,253.68</div><div class="change up">+6.56%</div></div>
+      <div class="card"><div class="label">上证指数</div><div class="value">3,969.67</div><div class="change up">+1.43%</div></div>
+      <div class="card"><div class="label">深证成指</div><div class="value">14,958.22</div><div class="change up">+3.00%</div></div>
+      <div class="card"><div class="label">创业板指</div><div class="value">3,869.74</div><div class="change up">+0.52%</div></div>
+      <div class="card"><div class="label">恒生指数</div><div class="value">24,527.63</div><div class="change up">+1.30%</div></div>
+      <div class="card"><div class="label">恒生科技</div><div class="value">4,705.79</div><div class="change up">+0.56%</div></div>
+      <div class="card"><div class="label">日经225</div><div class="value">68,357.62</div><div class="change up">+1.66%</div></div>
+      <div class="card"><div class="label">韩国KOSPI</div><div class="value">7,345.35</div><div class="change up">+7.91%</div></div>
     </div>
   </div>
 
   <div class="section">
     <h2>大宗商品与外汇</h2>
     <div class="commodity-row">
-      <div class="commodity-item"><div class="name">COMEX黄金</div><div class="val">$4,042.60</div><div class="chg up">+1.14%</div></div>
-      <div class="commodity-item"><div class="name">WTI原油</div><div class="val">$80.26</div><div class="chg up">+2.71%</div></div>
+      <div class="commodity-item"><div class="name">COMEX黄金</div><div class="val">$4,036.80</div><div class="chg up">+1.00%</div></div>
+      <div class="commodity-item"><div class="name">WTI原油</div><div class="val">$80.15</div><div class="chg up">+2.57%</div></div>
       <div class="commodity-item"><div class="name">美元人民币</div><div class="val">6.77</div><div class="chg down">-0.19%</div></div>
-      <div class="commodity-item"><div class="name">美元指数</div><div class="val">100.82</div><div class="chg down">-0.46%</div></div>
+      <div class="commodity-item"><div class="name">美元指数</div><div class="val">100.82</div><div class="chg down">-0.45%</div></div>
     </div>
   </div>
 
+  <div class="section">
+    <h2>宏观要闻与政策动态</h2>
+    <div class="news-item">
+        <span class="news-time">10:23</span>
+        <span class="news-tag">东方财富</span>
+        6月上海、广州二手房价环比涨幅居前
+      </div>
+<div class="news-item">
+        <span class="news-time">10:20</span>
+        <span class="news-tag">东方财富</span>
+        科创半导体ETF华夏近一周净流入居首 单只ETF净流入近120亿
+      </div>
+<div class="news-item">
+        <span class="news-time">10:17</span>
+        <span class="news-tag">东方财富</span>
+        7月上旬生猪价格环比上涨13.5%！畜牧养殖ETF天弘标的指数盘中大涨近2.5%，换手率超17%为同标的第一
+      </div>
+<div class="news-item">
+        <span class="news-time">10:10</span>
+        <span class="news-tag">东方财富</span>
+        国家统计局：1—6月全国房地产开发投资38074亿元 同比下降18.0%
+      </div>
+<div class="news-item">
+        <span class="news-time">10:08</span>
+        <span class="news-tag">东方财富</span>
+        7月以来翻倍基已减少七成 从246只降至73只
+      </div>
+<div class="news-item">
+        <span class="news-time">10:04</span>
+        <span class="news-tag">东方财富</span>
+        国家统计局：2026年上半年社会消费品零售总额增长1.3%
+      </div>
+<div class="news-item">
+        <span class="news-time">10:03</span>
+        <span class="news-tag">东方财富</span>
+        国家统计局：上半年全国城镇调查失业率平均值为5.2%
+      </div>
+<div class="news-item">
+        <span class="news-time">10:02</span>
+        <span class="news-tag">东方财富</span>
+        国家统计局：1—6月份全国房地产开发投资38074亿元
+      </div>
+  </div>
+
   <div class="footer">
-    由「财经秘书-早盘简报」自动生成 | 数据源：Yahoo Finance<br>
+    由「财经秘书-早盘简报」自动生成 | 数据源：Yahoo Finance / 财联社 / 东方财富<br>
     数据仅供参考，不构成投资建议
   </div>
 </div>
