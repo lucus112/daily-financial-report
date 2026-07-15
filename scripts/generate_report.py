@@ -5,6 +5,7 @@ import yfinance as yf
 import json
 import os
 import sys
+import math
 from datetime import datetime, timedelta
 
 # ─── 配置 ───────────────────────────────────────────
@@ -54,6 +55,8 @@ def fmt_change(v):
     """格式化涨跌幅，带正负号"""
     try:
         val = float(v)
+        if math.isnan(val):
+            return "数据暂缺"
         return f"{val:+.2f}%"
     except (TypeError, ValueError):
         return "数据暂缺"
@@ -81,7 +84,10 @@ def fmt_val(v, unit=""):
 def up_down(v):
     """判断涨跌: 'up' / 'down' / '' """
     try:
-        return "up" if float(v) > 0 else "down" if float(v) < 0 else ""
+        val = float(v)
+        if math.isnan(val):
+            return ""
+        return "up" if val > 0 else "down" if val < 0 else ""
     except (TypeError, ValueError):
         return ""
 
@@ -89,43 +95,77 @@ def up_down(v):
 def up_down_color(v):
     """涨跌颜色: 红涨绿跌"""
     try:
-        return "#e74c3c" if float(v) > 0 else "#27ae60" if float(v) < 0 else "#999"
+        val = float(v)
+        if math.isnan(val):
+            return "#999"
+        return "#e74c3c" if val > 0 else "#27ae60" if val < 0 else "#999"
     except (TypeError, ValueError):
         return "#999"
 
 
+def _is_valid(v):
+    """检查数值是否有效（非None、非NaN）"""
+    if v is None:
+        return False
+    try:
+        if math.isnan(float(v)):
+            return False
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
 def fetch_data(ticker_group):
-    """批量获取 ticker 数据"""
+    """批量获取 ticker 数据，fast_info 无效时 fallback 到 history"""
     results = {}
     for key, info in ticker_group.items():
         code = info["code"]
+        price = None
+        prev_close = None
+        change_pct = None
+        volume = None
+        error_msg = None
+
         try:
             t = yf.Ticker(code)
+            # 1. 尝试 fast_info（最快）
             fi = t.fast_info
             price = fi.get("lastPrice") or fi.get("regularMarketPreviousClose") or fi.get("previousClose")
             prev_close = fi.get("regularMarketPreviousClose") or fi.get("previousClose")
-            change_pct = None
-            if price and prev_close and prev_close != 0:
-                change_pct = round((price - prev_close) / prev_close * 100, 2)
             volume = fi.get("lastVolume") or fi.get("regularMarketVolume") or fi.get("volume")
-            results[key] = {
-                "name": info["name"],
-                "code": code,
-                "price": price,
-                "prev_close": prev_close,
-                "change_pct": change_pct,
-                "volume": volume,
-            }
+
+            # 验证 fast_info 数据有效性
+            if not _is_valid(price) or not _is_valid(prev_close):
+                price = None
+                prev_close = None
+
+            # 2. fallback: 使用 history(2d) 获取最近两天收盘价
+            if not _is_valid(price) or not _is_valid(prev_close):
+                try:
+                    hist = t.history(period="5d")
+                    if hist is not None and len(hist) >= 2:
+                        price = hist["Close"].iloc[-1]
+                        prev_close = hist["Close"].iloc[-2]
+                        volume = hist["Volume"].iloc[-1]
+                except Exception as e2:
+                    pass  # history fallback 失败，继续保留 None
+
+            # 计算涨跌幅
+            if _is_valid(price) and _is_valid(prev_close) and prev_close != 0:
+                change_pct = round((price - prev_close) / prev_close * 100, 2)
+
         except Exception as e:
-            results[key] = {
-                "name": info["name"],
-                "code": code,
-                "price": None,
-                "prev_close": None,
-                "change_pct": None,
-                "volume": None,
-                "error": str(e),
-            }
+            error_msg = str(e)
+
+        results[key] = {
+            "name": info["name"],
+            "code": code,
+            "price": price if _is_valid(price) else None,
+            "prev_close": prev_close if _is_valid(prev_close) else None,
+            "change_pct": change_pct if _is_valid(change_pct) else None,
+            "volume": volume if _is_valid(volume) else None,
+            "error": error_msg,
+        }
     return results
 
 
@@ -405,7 +445,10 @@ def generate_morning(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx):
     def gchg(d, k):
         v = g(d, k, "change_pct", None)
         try:
-            return float(v)
+            val = float(v)
+            if math.isnan(val):
+                return 0
+            return val
         except (TypeError, ValueError):
             return 0
     def gcol(d, k):
@@ -497,7 +540,10 @@ def generate_evening(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx):
     def gchg(d, k):
         v = g(d, k, "change_pct", None)
         try:
-            return float(v)
+            val = float(v)
+            if math.isnan(val):
+                return 0
+            return val
         except (TypeError, ValueError):
             return 0
     def gcol(d, k):
@@ -617,6 +663,68 @@ def is_scheduled_time():
     return True  # Always generate when called
 
 
+def write_homepage():
+    """生成 docs/index.html 导航首页"""
+    now = datetime.now()
+    date_str = now.strftime("%Y年%m月%d日")
+    weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    weekday = weekdays[now.weekday()]
+
+    html = f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>财经秘书日报 | {{date_str}}</title>
+<style>
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif; background: #f5f6fa; color: #333; padding: 16px; }}
+  .container {{ max-width: 800px; margin: 0 auto; }}
+  .header {{ background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; padding: 28px 24px; border-radius: 14px; margin-bottom: 18px; text-align: center; }}
+  .header h1 {{ font-size: 22px; font-weight: 700; margin-bottom: 4px; }}
+  .header .date {{ font-size: 13px; opacity: 0.7; }}
+  .card {{ background: #fff; border-radius: 14px; padding: 22px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); display: block; text-decoration: none; color: inherit; transition: transform 0.2s, box-shadow 0.2s; }}
+  .card:hover {{ transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }}
+  .card h2 {{ font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; padding-left: 12px; border-left: 3px solid #e74c3c; }}
+  .card p {{ font-size: 13px; color: #888; margin-left: 15px; }}
+  .badge {{ display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px; }}
+  .badge-morning {{ background: #3498db; color: #fff; }}
+  .badge-evening {{ background: #9b59b6; color: #fff; }}
+  .footer {{ text-align: center; color: #bbb; font-size: 11px; margin-top: 24px; padding-bottom: 20px; }}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>财经秘书日报</h1>
+    <div class="date">{date_str} {weekday}</div>
+  </div>
+
+  <a href="morning/" class="card">
+    <h2>早盘简报 <span class="badge badge-morning">08:00</span></h2>
+    <p>隔夜美股收盘 | 亚太盘前前瞻 | 大宗商品与外汇</p>
+  </a>
+
+  <a href="evening/" class="card">
+    <h2>晚盘复盘 <span class="badge badge-evening">17:00</span></h2>
+    <p>亚太股市收盘 | 美股开盘速递 | 大宗商品与外汇</p>
+  </a>
+
+  <div class="footer">
+    由「财经秘书」自动生成 | 数据源：Yahoo Finance<br>
+    数据仅供参考，不构成投资建议
+  </div>
+</div>
+</body>
+</html>"""
+    index_path = os.path.join(OUTPUT_DIR, "index.html")
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write(html)
+    print(f"[OK] 已写入首页: {index_path}")
+    return index_path
+
+
 def main():
     report_type = sys.argv[1] if len(sys.argv) > 1 else "morning"
 
@@ -638,6 +746,9 @@ def main():
 
     # Write
     write_report(html, "index.html", report_type)
+
+    # Generate homepage
+    write_homepage()
 
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {report_type}报告生成完成")
 
