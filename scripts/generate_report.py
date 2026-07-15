@@ -378,7 +378,7 @@ MORNING_HTML = """<!DOCTYPE html>
   </div>
 
   <div class="section">
-    <h2>亚太盘前前瞻</h2>
+    <h2>亚太盘前前瞻 <span style="font-weight:400;font-size:13px;color:#999;">（上一交易日收盘）</span></h2>
     <div class="cards-2">
       <div class="card"><div class="label">上证指数</div><div class="value">{cn_sh_price}</div><div class="change {cn_sh_updown}">{cn_sh_change}</div></div>
       <div class="card"><div class="label">深证成指</div><div class="value">{cn_sz_price}</div><div class="change {cn_sz_updown}">{cn_sz_change}</div></div>
@@ -391,7 +391,7 @@ MORNING_HTML = """<!DOCTYPE html>
   </div>
 
   <div class="section">
-    <h2>大宗商品与外汇</h2>
+    <h2>大宗商品与外汇 <span style="font-weight:400;font-size:13px;color:#999;">（隔夜数据）</span></h2>
     <div class="commodity-row">
       <div class="commodity-item"><div class="name">COMEX黄金</div><div class="val">${gold_price}</div><div class="chg {gold_updown}">{gold_change}</div></div>
       <div class="commodity-item"><div class="name">WTI原油</div><div class="val">${oil_price}</div><div class="chg {oil_updown}">{oil_change}</div></div>
@@ -864,7 +864,7 @@ def write_homepage():
 
   <a href="morning/" class="card">
     <h2>早盘简报 <span class="badge badge-morning">08:00</span></h2>
-    <p>隔夜美股收盘 | 亚太盘前前瞻 | 大宗商品与外汇</p>
+    <p>隔夜美股收盘(上一交易日) | 亚太上一交易日收盘 | 大宗商品与外汇</p>
   </a>
 
   <a href="evening/" class="card">
