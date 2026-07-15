@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>财经秘书日报</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f6fa; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .container { text-align: center; padding: 40px 20px; }
+  .logo { font-size: 48px; margin-bottom: 16px; }
+  .title { font-size: 28px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+  .subtitle { font-size: 14px; color: #888; margin-bottom: 40px; }
+  .links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+  .card { background: #fff; border-radius: 12px; padding: 30px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); text-decoration: none; color: #333; transition: transform 0.2s, box-shadow 0.2s; min-width: 200px; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+  .card .icon { font-size: 32px; margin-bottom: 8px; }
+  .card .name { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: #1a1a2e; }
+  .card .time { font-size: 12px; color: #999; }
+  .footer { margin-top: 60px; font-size: 12px; color: #bbb; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">📊</div>
+  <div class="title">财经秘书日报</div>
+  <div class="subtitle">全球市场核心数据 · 自动生成 · 持续更新</div>
+  <div class="links">
+    <a href="/daily-financial-report/morning/" class="card">
+      <div class="icon">🌅</div>
+      <div class="name">早盘简报</div>
+      <div class="time">每日 08:00 更新</div>
+    </a>
+    <a href="/daily-financial-report/evening/" class="card">
+      <div class="icon">🌆</div>
+      <div class="name">晚盘复盘</div>
+      <div class="time">每日 17:00 更新</div>
+    </a>
+  </div>
+  <div class="footer">由 GitHub Actions 自动生成 · 数据来源：yfinance</div>
+</div>
+</body>
+</html>
