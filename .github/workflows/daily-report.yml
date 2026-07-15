@@ -29,6 +29,7 @@ jobs:
       - name: 检出仓库
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 安装 Python
@@ -66,11 +67,22 @@ jobs:
             python scripts/generate_report.py $TYPE
           fi
 
-      - name: 提交并推送
+      - name: 推送到 gh-pages
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/
+          # Switch to gh-pages branch
+          git fetch origin gh-pages
+          git checkout gh-pages
+          
+          # Pull latest to avoid conflicts
+          git pull origin gh-pages --ff-only 2>/dev/null || echo "No upstream changes"
+          
+          # Copy master's docs/ to gh-pages root
+          git checkout master -- docs/
+          
+          # Also pull latest scripts for future manual runs
+          git checkout master -- scripts/generate_report.py requirements.txt 2>/dev/null || true
+          
+          git add docs/ scripts/ requirements.txt
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
@@ -78,19 +90,4 @@ jobs:
           fi
           
           git commit -m "docs: auto-generate daily report [$(date +%Y-%m-%d)]"
-          git push
-
-  deploy:
-    needs: generate
-    runs-on: ubuntu-latest
-    if: success()
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: 部署到 GitHub Pages
-        uses: actions/deploy-pages@v4
+          git push origin gh-pages
