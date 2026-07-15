@@ -6,6 +6,9 @@ import json
 import os
 import sys
 import math
+import time
+import re
+import urllib.request
 from datetime import datetime, timedelta
 
 # ─── 配置 ───────────────────────────────────────────
@@ -41,6 +44,141 @@ TICKERS = {
         "DXY": {"code": "DX-Y.NYB", "name": "美元指数"},
     },
 }
+
+# ─── 宏观关键词 ───────────────────────────────────────
+MACRO_KEYWORDS = [
+    "央行", "美联储", "降息", "加息", "降准", "利率", "通胀", "CPI", "PPI", "GDP",
+    "PMI", "社融", "M2", "LPR", "MLF", "逆回购", "准备金", "财政", "国债", "地方债",
+    "证监会", "银保监", "金融监管", "政治局", "国务院", "发改委", "商务部", "统计局",
+    "汇率", "人民币", "关税", "贸易", "制裁", "地缘", "中东", "石油", "OPEC",
+    "IPO", "再融资", "并购", "重组", "注册制", "退市", "科创板", "北交所",
+    "就业", "非农", "初请", "消费者信心", "PMI", "零售", "房地产", "PMI",
+    "科技", "AI", "芯片", "半导体", "新能源", "光伏", "锂电", "电动车",
+    "政策", "法规", "改革", "减税", "补贴",
+]
+
+NEWS_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+
+def fetch_cls_telegraph(n=30):
+    """获取财联社电报快讯"""
+    url = f"https://www.cls.cn/nodeapi/telegraphList?app=CailianpressWeb&os=web&sv=8.4.6&rn={n}&last_time=0"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": NEWS_UA})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        items = []
+        for item in data.get("data", {}).get("roll_data", []):
+            content = item.get("content", "")
+            brief = item.get("brief", "")
+            items.append({
+                "title": (brief or content)[:120],
+                "content": content[:200],
+                "ctime": item.get("ctime", 0),
+                "source": "财联社",
+                "id": str(item.get("id", "")),
+            })
+        return items
+    except Exception as e:
+        print(f"[WARN] 财联社电报获取失败: {e}")
+        return []
+
+
+def fetch_eastmoney_news(n=30):
+    """获取东方财富 7x24 快讯"""
+    url = f"https://newsapi.eastmoney.com/kuaixun/v1/getlist_102_ajaxResult_{n}_1_.html"
+    headers = {"User-Agent": NEWS_UA, "Referer": "https://kuaixun.eastmoney.com/"}
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            raw = resp.read().decode("utf-8")
+        match = re.search(r"var ajaxResult=(\{.*\});?", raw, re.DOTALL)
+        if not match:
+            return []
+        result = json.loads(match.group(1))
+        items = []
+        for item in result.get("LivesList", []):
+            showtime = item.get("showtime", "")
+            try:
+                dt = datetime.strptime(showtime, "%Y-%m-%d %H:%M:%S")
+                ts = dt.timestamp()
+            except Exception:
+                ts = 0
+            items.append({
+                "title": (item.get("title", ""))[:120],
+                "content": (item.get("digest", ""))[:200],
+                "ctime": int(ts),
+                "source": "东方财富",
+                "id": str(item.get("newsid", "")),
+            })
+        return items
+    except Exception as e:
+        print(f"[WARN] 东方财富快讯获取失败: {e}")
+        return []
+
+
+def score_news(item):
+    """对新闻进行重要性评分（宏观政策类加分）"""
+    text = item["title"] + item["content"]
+    score = 0
+    for kw in MACRO_KEYWORDS:
+        if kw in text:
+            score += 1
+    # 突发/重要前缀加分
+    for prefix in ["突发", "【重磅】", "刚刚", "紧急", "深夜"]:
+        if prefix in item["title"]:
+            score += 3
+    return score
+
+
+def get_top_news(report_type="morning", top_n=8):
+    """获取并筛选头条新闻"""
+    # 获取多源数据
+    cls_items = fetch_cls_telegraph(40)
+    em_items = fetch_eastmoney_news(40)
+
+    all_items = cls_items + em_items
+
+    # 去重（按标题相似度）
+    seen = set()
+    deduped = []
+    for item in all_items:
+        title_short = item["title"][:30]
+        if title_short not in seen:
+            seen.add(title_short)
+            deduped.append(item)
+
+    # 按重要性评分排序
+    deduped.sort(key=lambda x: (score_news(x), x["ctime"]), reverse=True)
+
+    # 选择 top_n
+    selected = deduped[:top_n]
+
+    # 按时间排序显示
+    selected.sort(key=lambda x: x["ctime"], reverse=True)
+
+    return selected
+
+
+def format_news_html(news_items):
+    """将新闻列表格式化为 HTML"""
+    if not news_items:
+        return '<div class="news-empty">暂无重要新闻</div>'
+
+    rows = []
+    for item in news_items:
+        ts = item["ctime"]
+        if ts > 0:
+            t = datetime.fromtimestamp(ts).strftime("%H:%M")
+        else:
+            t = ""
+        title = item["title"].replace("<", "&lt;").replace(">", "&gt;")
+        rows.append(f"""<div class="news-item">
+        <span class="news-time">{t}</span>
+        <span class="news-tag">{item["source"]}</span>
+        {title}
+      </div>""")
+    return "\n".join(rows)
 
 
 def fmt_price(v):
@@ -202,6 +340,11 @@ MORNING_HTML = """<!DOCTYPE html>
   .commodity-item .chg {{ font-size: 12px; font-weight: 600; margin-top: 3px; }}
   .up {{ color: #e74c3c; }} .down {{ color: #27ae60; }}
   .footer {{ text-align: center; color: #bbb; font-size: 11px; margin-top: 24px; padding-bottom: 20px; }}
+  .news-item {{ padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; line-height: 1.6; color: #444; }}
+  .news-item:last-child {{ border-bottom: none; }}
+  .news-time {{ font-size: 11px; color: #aaa; margin-right: 8px; font-family: monospace; }}
+  .news-tag {{ display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-right: 6px; background: #eef1f7; color: #666; }}
+  .news-empty {{ text-align: center; color: #999; font-size: 13px; padding: 16px 0; }}
   @media (max-width: 600px) {{ .cards, .cards-2 {{ grid-template-columns: 1fr; }} .commodity-row {{ grid-template-columns: repeat(2, 1fr); }} }}
 </style>
 </head>
@@ -257,8 +400,13 @@ MORNING_HTML = """<!DOCTYPE html>
     </div>
   </div>
 
+  <div class="section">
+    <h2>宏观要闻与政策动态</h2>
+    {news_section}
+  </div>
+
   <div class="footer">
-    由「财经秘书-早盘简报」自动生成 | 数据源：Yahoo Finance<br>
+    由「财经秘书-早盘简报」自动生成 | 数据源：Yahoo Finance / 财联社 / 东方财富<br>
     数据仅供参考，不构成投资建议
   </div>
 </div>
@@ -323,6 +471,11 @@ EVENING_HTML = """<!DOCTYPE html>
   .status-pre {{ background: #f39c12; color: #fff; }}
   .up {{ color: #e74c3c; }} .down {{ color: #27ae60; }}
   .footer {{ text-align: center; color: #bbb; font-size: 11px; margin-top: 24px; padding-bottom: 20px; }}
+  .news-item {{ padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; line-height: 1.6; color: #444; }}
+  .news-item:last-child {{ border-bottom: none; }}
+  .news-time {{ font-size: 11px; color: #aaa; margin-right: 8px; font-family: monospace; }}
+  .news-tag {{ display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-right: 6px; background: #eef1f7; color: #666; }}
+  .news-empty {{ text-align: center; color: #999; font-size: 13px; padding: 16px 0; }}
   @media (max-width: 600px) {{ .cards {{ grid-template-columns: 1fr; }} .commodity-row {{ grid-template-columns: repeat(2, 1fr); }} }}
 </style>
 </head>
@@ -382,8 +535,13 @@ EVENING_HTML = """<!DOCTYPE html>
     </div>
   </div>
 
+  <div class="section">
+    <h2>宏观要闻与政策动态</h2>
+    {news_section}
+  </div>
+
   <div class="footer">
-    由「财经秘书-晚盘复盘」自动生成 | 数据源：Yahoo Finance<br>
+    由「财经秘书-晚盘复盘」自动生成 | 数据源：Yahoo Finance / 财联社 / 东方财富<br>
     数据仅供参考，不构成投资建议
   </div>
 </div>
@@ -421,7 +579,7 @@ EVENING_HTML = """<!DOCTYPE html>
 </html>"""
 
 
-def generate_morning(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx):
+def generate_morning(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx, news_items=None):
     """生成早盘简报 HTML"""
     now = datetime.now()
     date_str = now.strftime("%Y年%m月%d日")
@@ -513,11 +671,13 @@ def generate_morning(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx):
         dxy_price=fmt_val(g(data_fx, "DXY", "price")),
         dxy_change=gc(data_fx, "DXY"),
         dxy_updown=gud(data_fx, "DXY"),
+        # News
+        news_section=format_news_html(news_items),
     )
     return html
 
 
-def generate_evening(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx):
+def generate_evening(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx, news_items=None):
     """生成晚盘复盘 HTML"""
     now = datetime.now()
     date_str = now.strftime("%Y年%m月%d日")
@@ -627,6 +787,8 @@ def generate_evening(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx):
         dxy_price=fmt_val(g(data_fx, "DXY", "price")),
         dxy_change=gc(data_fx, "DXY"),
         dxy_updown=gud(data_fx, "DXY"),
+        # News
+        news_section=format_news_html(news_items),
     )
     return html
 
@@ -738,11 +900,14 @@ def main():
     data_comm = fetch_data(TICKERS["commodity"])
     data_fx = fetch_data(TICKERS["forex"])
 
+    # Fetch news
+    news_items = get_top_news(report_type)
+
     # Generate HTML
     if report_type == "morning":
-        html = generate_morning(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx)
+        html = generate_morning(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx, news_items)
     else:
-        html = generate_evening(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx)
+        html = generate_evening(data_us, data_cn, data_hk, data_jpkr, data_comm, data_fx, news_items)
 
     # Write
     write_report(html, "index.html", report_type)
