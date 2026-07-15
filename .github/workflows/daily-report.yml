@@ -69,22 +69,24 @@ jobs:
 
       - name: 推送到 gh-pages
         run: |
-          # Switch to gh-pages branch
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Backup generated docs to a temp location before switching branches
+          cp -r docs /tmp/generated_docs
+          
+          # Switch to gh-pages and update it
           git fetch origin gh-pages
           git checkout gh-pages
+          git pull origin gh-pages --ff-only 2>/dev/null || echo "Already up to date"
           
-          # Pull latest to avoid conflicts
-          git pull origin gh-pages --ff-only 2>/dev/null || echo "No upstream changes"
+          # Copy generated docs from temp into gh-pages working tree
+          rm -rf docs/ 2>/dev/null || true
+          cp -r /tmp/generated_docs docs/
           
-          # Copy master's docs/ to gh-pages root
-          git checkout master -- docs/
+          git add docs/
           
-          # Also pull latest scripts for future manual runs
-          git checkout master -- scripts/generate_report.py requirements.txt 2>/dev/null || true
-          
-          git add docs/ scripts/ requirements.txt
-          
-          if git diff --staged --quiet; then
+          if git diff --staged --quiet && git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
