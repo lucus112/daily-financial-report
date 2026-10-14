@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>财经晚盘复盘 | 2026年10月14日</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif; background: #f5f6fa; color: #333; padding: 16px; }
+  .container { max-width: 800px; margin: 0 auto; }
+  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; padding: 28px 24px; border-radius: 14px; margin-bottom: 18px; text-align: center; }
+  .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .header .date { font-size: 13px; opacity: 0.7; }
+  .section { background: #fff; border-radius: 14px; padding: 22px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); }
+  .section h2 { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; padding-left: 12px; border-left: 3px solid #e74c3c; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .card { background: #f8f9fc; border-radius: 10px; padding: 16px 12px; text-align: center; }
+  .card .label { font-size: 11px; color: #999; margin-bottom: 6px; }
+  .card .value { font-size: 19px; font-weight: 700; color: #1a1a2e; }
+  .card .change { font-size: 13px; font-weight: 600; margin-top: 4px; }
+  .card .vol { font-size: 11px; color: #aaa; margin-top: 3px; }
+  .chart-box { width: 100%; height: 380px; margin-top: 16px; }
+  .commodity-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .commodity-item { text-align: center; padding: 12px 8px; background: #f8f9fc; border-radius: 10px; }
+  .commodity-item .name { font-size: 11px; color: #999; }
+  .commodity-item .val { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-top: 4px; }
+  .commodity-item .chg { font-size: 12px; font-weight: 600; margin-top: 3px; }
+  .status-tag { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+  .status-open { background: #e74c3c; color: #fff; }
+  .status-pre { background: #f39c12; color: #fff; }
+  .up { color: #e74c3c; } .down { color: #27ae60; }
+  .footer { text-align: center; color: #bbb; font-size: 11px; margin-top: 24px; padding-bottom: 20px; }
+  .news-item { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; line-height: 1.6; color: #444; }
+  .news-item:last-child { border-bottom: none; }
+  .news-time { font-size: 11px; color: #aaa; margin-right: 8px; font-family: monospace; }
+  .news-tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-right: 6px; background: #eef1f7; color: #666; }
+  .news-empty { text-align: center; color: #999; font-size: 13px; padding: 16px 0; }
+  @media (max-width: 600px) { .cards { grid-template-columns: 1fr; } .commodity-row { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>财经晚盘复盘</h1>
+    <div class="date">2026年10月14日 周三</div>
+  </div>
+
+  <div class="section">
+    <h2>亚太股市收盘</h2>
+    <div class="cards">
+      <div class="card"><div class="label">上证指数</div><div class="value">3,801.13</div><div class="change up">+0.01%</div><div class="vol">15.21亿</div></div>
+      <div class="card"><div class="label">深证成指</div><div class="value">12,290.59</div><div class="change down">-0.51%</div></div>
+      <div class="card"><div class="label">创业板指</div><div class="value">2,924.39</div><div class="change down">-1.17%</div></div>
+    </div>
+    <div class="cards" style="margin-top:12px;">
+      <div class="card"><div class="label">恒生指数</div><div class="value">24,384.95</div><div class="change up">+0.16%</div></div>
+      <div class="card"><div class="label">恒生科技</div><div class="value">4,203.31</div><div class="change up">+1.61%</div></div>
+      <div class="card"><div class="label">日经225</div><div class="value">68,371.53</div><div class="change up">+0.88%</div></div>
+    </div>
+    <div class="cards" style="margin-top:12px; grid-template-columns: 1fr 1fr;">
+      <div class="card"><div class="label">韩国KOSPI</div><div class="value">6,102.30</div><div class="change up">+1.11%</div></div>
+    </div>
+    <div id="asiaChart" class="chart-box"></div>
+  </div>
+
+  <div class="section">
+    <h2>美股开盘速递 <span class="status-tag status-pre">尚未开盘</span></h2>
+    <div class="cards">
+      <div class="card">
+        <div class="label">道琼斯工业指数</div>
+        <div class="value">51,670.10</div>
+        <div class="change down">-0.35%</div>
+      </div>
+      <div class="card">
+        <div class="label">纳斯达克综合指数</div>
+        <div class="value">27,204.38</div>
+        <div class="change down">-0.15%</div>
+      </div>
+      <div class="card">
+        <div class="label">标普500指数</div>
+        <div class="value">7,805.45</div>
+        <div class="change down">-0.02%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>大宗商品与外汇</h2>
+    <div class="commodity-row">
+      <div class="commodity-item"><div class="name">COMEX黄金</div><div class="val">$4,183.60</div><div class="chg up">+0.15%</div></div>
+      <div class="commodity-item"><div class="name">WTI原油</div><div class="val">$94.67</div><div class="chg up">+0.56%</div></div>
+      <div class="commodity-item"><div class="name">美元人民币</div><div class="val">6.69</div><div class="chg down">-0.02%</div></div>
+      <div class="commodity-item"><div class="name">美元指数</div><div class="val">102.09</div><div class="chg down">-0.09%</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>宏观要闻与政策动态</h2>
+    <div class="news-item">
+        <span class="news-time">12:11</span>
+        <span class="news-tag">东方财富</span>
+        阶跃首款智能体手机屏幕供应商为TCL华星
+      </div>
+<div class="news-item">
+        <span class="news-time">12:02</span>
+        <span class="news-tag">东方财富</span>
+        10月14日午间新闻精选
+      </div>
+<div class="news-item">
+        <span class="news-time">11:44</span>
+        <span class="news-tag">东方财富</span>
+        华为AI芯片中国市场出货量逼近英伟达
+      </div>
+<div class="news-item">
+        <span class="news-time">11:41</span>
+        <span class="news-tag">东方财富</span>
+        宝能集团及姚振华等被执行20.5亿
+      </div>
+<div class="news-item">
+        <span class="news-time">11:36</span>
+        <span class="news-tag">东方财富</span>
+        双创指数半日均跌超1% AI漫剧概念股集体爆发
+      </div>
+<div class="news-item">
+        <span class="news-time">11:14</span>
+        <span class="news-tag">东方财富</span>
+        AI漫剧概念涨势扩大！新华文轩上演“准地天板 走出13天9板
+      </div>
+<div class="news-item">
+        <span class="news-time">11:13</span>
+        <span class="news-tag">东方财富</span>
+        德勤CFO调查显示AI将促使逾一半英国公司裁员
+      </div>
+<div class="news-item">
+        <span class="news-time">11:08</span>
+        <span class="news-tag">东方财富</span>
+        泰国央行副行长：不太可能进一步降息 未来利率或升至1.5%至2%
+      </div>
+  </div>
+
+  <div class="footer">
+    由「财经秘书-晚盘复盘」自动生成 | 数据源：Yahoo Finance / 财联社 / 东方财富<br>
+    数据仅供参考，不构成投资建议
+  </div>
+</div>
+
+<script>
+(function() {
+  var chart = echarts.init(document.getElementById('asiaChart'));
+  var option = {
+    tooltip: { trigger: 'axis', formatter: '{b}: {c}%' },
+    grid: { left: 100, right: 50, top: 16, bottom: 16 },
+    xAxis: { type: 'value', unit: '%', axisLabel: { formatter: '{value}%' } },
+    yAxis: { type: 'category',
+      data: ['韩国KOSPI', '日经225', '恒生科技', '恒生指数', '创业板指', '深证成指', '上证指数'],
+      axisLabel: { fontSize: 11, color: '#333' } },
+    series: [{
+      type: 'bar',
+      data: [
+        { value: 1.11, itemStyle: { color: '#e74c3c' } },
+        { value: 0.88, itemStyle: { color: '#e74c3c' } },
+        { value: 1.61, itemStyle: { color: '#e74c3c' } },
+        { value: 0.16, itemStyle: { color: '#e74c3c' } },
+        { value: -1.17, itemStyle: { color: '#27ae60' } },
+        { value: -0.51, itemStyle: { color: '#27ae60' } },
+        { value: 0.01, itemStyle: { color: '#e74c3c' } }
+      ],
+      barWidth: 18,
+      label: { show: true, position: 'right', formatter: '{c}%', fontSize: 11 }
+    }]
+  };
+  chart.setOption(option);
+  window.addEventListener('resize', function() { chart.resize(); });
+})();
+</script>
+</body>
+</html>
